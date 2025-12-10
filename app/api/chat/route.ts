@@ -130,6 +130,10 @@ export async function POST(req: NextRequest) {
 
         const apiKey = process.env.GOOGLE_API_KEY;
 
+        // Debug: Check if API key exists
+        const hasApiKey = !!apiKey;
+        const apiKeyPreview = apiKey ? `${apiKey.substring(0, 8)}...` : 'NOT SET';
+
         if (apiKey) {
             try {
                 const google = createGoogleGenerativeAI({ apiKey });
@@ -166,10 +170,18 @@ Instructions:
             } catch (aiError: unknown) {
                 const errorMessage = aiError instanceof Error ? aiError.message : 'Unknown error';
                 console.error('AI Error:', errorMessage);
+                // Return error info for debugging
+                return NextResponse.json({
+                    response: `⚠️ AI Error (API Key: ${apiKeyPreview}): ${errorMessage}\n\n---\n\nFallback response:\n${generateStaticResponse(lastMessage.content, context, language)}`
+                });
             }
         }
+
+        // No API key - return static response with debug info
         const response = generateStaticResponse(lastMessage.content, context, language);
-        return NextResponse.json({ response });
+        return NextResponse.json({
+            response: hasApiKey ? response : `🔑 No API Key detected.\n\n${response}`
+        });
 
     } catch (error) {
         console.error('Chat error:', error);
