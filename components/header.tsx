@@ -56,7 +56,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
                     {/* Developer Portfolio*/}
                     <a
-                        href="https://github.com/https://hossam-portfolio-one.vercel.app/"
+                        href="https://hossam-portfolio-one.vercel.app/"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
