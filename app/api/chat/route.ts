@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
 
         const context = findRelevantRegulations(lastMessage.content, language);
 
-        const apiKey = process.env.GOOGLE_API_KEY;
+        const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
 
         if (apiKey) {
             try {
