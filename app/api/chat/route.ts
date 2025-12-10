@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { generateText } from 'ai';
+import { GoogleGenAI } from '@google/genai';
 import { getSystemPrompt, findRelevantRegulations } from '@/lib/ai-config';
 
 const gradePoints: { [key: string]: number } = {
@@ -128,15 +127,18 @@ export async function POST(req: NextRequest) {
 
         const context = findRelevantRegulations(lastMessage.content, language);
 
-        const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+        const apiKey = process.env.GEMINI_API_KEY;
 
         if (apiKey) {
             try {
-                const google = createGoogleGenerativeAI({ apiKey });
-                const model = google('gemini-2.0-flash');
+                const ai = new GoogleGenAI({ apiKey });
 
                 const systemPrompt = getSystemPrompt(language);
                 const userPrompt = `
+${systemPrompt}
+
+---
+
 Context from FCI Regulations:
 ${context}
 
@@ -154,14 +156,13 @@ Instructions:
 - Respond in ${language === 'ar' ? 'Arabic' : 'English'}
 `;
 
-                const result = await generateText({
-                    model,
-                    system: systemPrompt,
-                    prompt: userPrompt,
+                const response = await ai.models.generateContent({
+                    model: 'gemini-2.5-flash',
+                    contents: userPrompt,
                 });
 
-                if (result.text) {
-                    return NextResponse.json({ response: result.text });
+                if (response.text) {
+                    return NextResponse.json({ response: response.text });
                 }
             } catch (aiError: unknown) {
                 const errorMessage = aiError instanceof Error ? aiError.message : 'Unknown error';

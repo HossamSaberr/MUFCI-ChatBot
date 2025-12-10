@@ -12,6 +12,7 @@
     "@ai-sdk/anthropic": "^2.0.53",
     "@ai-sdk/google": "^2.0.44",
     "@ai-sdk/openai": "^2.0.79",
+    "@google/genai": "^1.32.0",
     "ai": "^5.0.108",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
