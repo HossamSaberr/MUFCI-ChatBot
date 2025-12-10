@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSystemPrompt, findRelevantRegulations, ChatMessage } from '@/lib/ai-config';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { generateText } from 'ai';
+import { getSystemPrompt, findRelevantRegulations } from '@/lib/ai-config';
 
 const gradePoints: { [key: string]: number } = {
     'A+': 4.0, 'A': 4.0, 'A-': 3.7,
@@ -125,17 +127,54 @@ export async function POST(req: NextRequest) {
         }
 
         const context = findRelevantRegulations(lastMessage.content, language);
-        const response = generateResponse(lastMessage.content, context, language);
 
+        const apiKey = process.env.GOOGLE_API_KEY;
+
+        if (apiKey) {
+            try {
+                const google = createGoogleGenerativeAI({ apiKey });
+                const model = google('gemini-2.0-flash');
+
+                const systemPrompt = getSystemPrompt(language);
+                const userPrompt = `
+Context from FCI Regulations:
+${context}
+
+---
+
+User Question: ${lastMessage.content}
+
+Instructions:
+- Answer based on the context above
+- Be conversational and helpful
+- Use markdown formatting
+- If the user greets you, greet them back warmly
+- If asked about GPA calculation, explain how it works
+- Respond in ${language === 'ar' ? 'Arabic' : 'English'}
+`;
+
+                const result = await generateText({
+                    model,
+                    system: systemPrompt,
+                    prompt: userPrompt,
+                });
+
+                return NextResponse.json({ response: result.text });
+            } catch (aiError) {
+                console.error('AI Error:', aiError);
+            }
+        }
+        const response = generateStaticResponse(lastMessage.content, context, language);
         return NextResponse.json({ response });
+
     } catch (error) {
         console.error('Chat error:', error);
         return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 });
     }
 }
 
-function generateResponse(userMessage: string, context: string, language: 'ar' | 'en'): string {
-    const greetings = ['hello', 'hi', 'مرحبا', 'هلا', 'سلام', 'السلام', 'اهلا'];
+function generateStaticResponse(userMessage: string, context: string, language: 'ar' | 'en'): string {
+    const greetings = ['hello', 'hi', 'مرحبا', 'هلا', 'سلام', 'السلام', 'اهلا', 'hey'];
     const isGreeting = greetings.some(g => userMessage.toLowerCase().includes(g));
 
     if (isGreeting) {
