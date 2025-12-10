@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
         if (apiKey) {
             try {
                 const google = createGoogleGenerativeAI({ apiKey });
-                const model = google('gemini-2.0-flash');
+                const model = google('gemini-1.5-flash');
 
                 const systemPrompt = getSystemPrompt(language);
                 const userPrompt = `
@@ -150,6 +150,7 @@ Instructions:
 - Use markdown formatting
 - If the user greets you, greet them back warmly
 - If asked about GPA calculation, explain how it works
+- If the question is not related to FCI regulations, politely decline and redirect
 - Respond in ${language === 'ar' ? 'Arabic' : 'English'}
 `;
 
@@ -159,9 +160,12 @@ Instructions:
                     prompt: userPrompt,
                 });
 
-                return NextResponse.json({ response: result.text });
-            } catch (aiError) {
-                console.error('AI Error:', aiError);
+                if (result.text) {
+                    return NextResponse.json({ response: result.text });
+                }
+            } catch (aiError: unknown) {
+                const errorMessage = aiError instanceof Error ? aiError.message : 'Unknown error';
+                console.error('AI Error:', errorMessage);
             }
         }
         const response = generateStaticResponse(lastMessage.content, context, language);
