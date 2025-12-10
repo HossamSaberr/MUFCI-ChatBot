@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
         if (apiKey) {
             try {
                 const google = createGoogleGenerativeAI({ apiKey });
-                const model = google('models/gemini-pro');
+                const model = google('gemini-2.0-flash-exp');
 
                 const systemPrompt = getSystemPrompt(language);
                 const userPrompt = `
